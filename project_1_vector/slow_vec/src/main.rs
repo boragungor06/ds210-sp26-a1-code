@@ -19,7 +19,7 @@ fn fixed_sized_array() {
 
     // Can we call move many times? try it out and see for yourself.
     println!("{}", array.move_out(0));
-    // println!("{}", array.move_out(0));
+    //println!("{}", array.move_out(0));
 
     // Try other things!
     // What happens if you try to put or get things out of the range?
