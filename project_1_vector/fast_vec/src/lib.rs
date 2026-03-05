@@ -63,14 +63,15 @@ impl<T> FastVec<T> {
     pub fn get(&self, i: usize) -> &T {
         //todo!("implement get!");
         unsafe {
-        if i >= self.len {
-            panic!("FastVec: get out of bounds"); }
-        else {
-            let ptr = self.ptr_to_data.add(i); 
+            if i >= self.len{
+                panic!("FastVec: get out of bounds")
+            } else {
+                let ptr = self.ptr_to_data.add(i); 
             // the ptr stores the first address of the first element. 
             // if we want the i'th element, we perform pointer arithmetic (.add()) to move i*datasize addresses down.
-            return &*ptr; }
-        }    
+            return &*ptr;
+            }
+        }
     }
     
 
@@ -101,7 +102,29 @@ impl<T> FastVec<T> {
 
     // Student 1 should implement this.
     pub fn remove(&mut self, i: usize) {
-        todo!("implement remove");
+        //todo!("implement remove");
+        if i >= self.len{
+            panic!("FastVec: remove out of bounds")
+            //panic if the person is trying to reach out of range
+        } else{
+            unsafe {
+                let ptr_remove = self.ptr_to_data.add(i);
+                //I am getting the pointer of the i that I want to delete by adding i steps to the
+                //starting pointer
+                let old_variable = ptr::read(ptr_remove);
+                // just removing the item in the index i
+                for n in (i+1)..self.len{
+                    // I am asking the loop to start from the index that is right after the one
+                    // we deleted. It will safely go until the end of the vector because of len
+                    let move_this = ptr::read(self.ptr_to_data.add(n));
+                    // Deleting the item and moving it to variable
+                    ptr::write(self.ptr_to_data.add(n-1),move_this);
+                    // Now I am moving that variable to it's new position which is the one before
+                }
+                self.len = self.len - 1;
+                // since we need to keep track of len I am just updating it.
+            }
+        }
     }
 
     // This appears correct but with further testing, you will notice it has a bug!
