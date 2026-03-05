@@ -61,7 +61,17 @@ impl<T> FastVec<T> {
     // Student 1 and Student 2 should implement this together
     // Use the project handout as a guide for this part!
     pub fn get(&self, i: usize) -> &T {
-        todo!("implement get!");
+        //todo!("implement get!");
+        unsafe {
+            if i >= self.len{
+                panic!("FastVec: get out of bounds")
+            } else {
+                let ptr = self.ptr_to_data.add(i); 
+            // the ptr stores the first address of the first element. 
+            // if we want the i'th element, we perform pointer arithmetic (.add()) to move i*datasize addresses down.
+            return &*ptr;
+            }
+        }
     }
 
     // Student 2 should implement this.
@@ -75,7 +85,20 @@ impl<T> FastVec<T> {
 
     // Student 1 should implement this.
     pub fn remove(&mut self, i: usize) {
-        todo!("implement remove");
+        //todo!("implement remove");
+        if i >= self.len{
+            panic!("FastVec: remove out of bounds")
+        } else{
+            unsafe {
+                let ptr_remove = self.ptr_to_data.add(i);
+                let _old_variable = ptr::read(ptr_remove);
+                for n in (i+1)..self.len{
+                    let move_this = ptr::read(self.ptr_to_data.add(n));
+                    ptr::write(self.ptr_to_data.add(n-1),move_this);
+                }
+                self.len = self.len - 1;
+            }
+        }
     }
 
     // This appears correct but with further testing, you will notice it has a bug!
