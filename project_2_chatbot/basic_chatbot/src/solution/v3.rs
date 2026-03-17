@@ -55,12 +55,13 @@ impl ChatbotV3 {
                 let mut out: Vec<String> = Vec::new();
 
                 for message in history {
-                    out.push(format!("{:?}", message));
+                  let content = message.content().to_string();
+                  out.push(content);
                 }
 
                 return out;
             }
 
-            return Vec::new();
+            Vec::new()
     }
 }
