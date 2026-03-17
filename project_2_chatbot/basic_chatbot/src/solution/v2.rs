@@ -4,6 +4,7 @@ use kalosm::language::*;
 pub struct ChatbotV2 {
     // What should you store inside your Chatbot type?
     // The model? The chat_session?
+    chat_session: Chat<Llama>, // this instead of "model: Llama," seen in v1. this way, the session can be saved to the object.
 }
 
 impl ChatbotV2 {
@@ -12,12 +13,18 @@ impl ChatbotV2 {
         return ChatbotV2 {
             // Whatever you decide to store in the struct
             // you need to make sure you pass here!
+            chat_session: model.chat() // session creation, which is in new instead of chat_with_user
+            .with_system_prompt("The assistant will act like a pirate"),
         };
+        
     }
 
     #[allow(dead_code)]
     pub async fn chat_with_user(&mut self, message: String) -> String {
         // Add your code for chatting with the agent while keeping conversation history here.
-        return String::from("Hello, I am not a bot (yet)!");
+        let asynchronous_output = self.chat_session.add_message(message);
+        let output = asynchronous_output.await;
+        let result = output.unwrap();
+        return result;
     }
 }
