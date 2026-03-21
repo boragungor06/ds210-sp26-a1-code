@@ -35,8 +35,15 @@ impl ChatbotV4 {
                 return Vec::new();
             },
             Some(session) => {
-                // TODO: what should happen here?
-                return Vec::new();
+                let mut hist: Vec<String> = Vec::new();
+
+                let history = session.history();
+
+                for message in history {
+                    let x = message.content().to_string();
+                    hist.push(x)
+                }
+                return hist;
             }
         }
     }
