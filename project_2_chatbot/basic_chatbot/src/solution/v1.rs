@@ -24,8 +24,8 @@ impl ChatbotV1 {
 
 
         let asynchronous_output = chat_session.add_message(message);
-        let output = asynchronous_output.await.unwrap(); 
-
-        return output
+        let output = asynchronous_output.await;
+        let result = output.unwrap();
+        return result;
     }
 }
