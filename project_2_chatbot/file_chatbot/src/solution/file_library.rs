@@ -24,7 +24,7 @@ pub fn load_chat_session_from_file(filename: &str) -> Option<LlamaChatSession> {
     let result = fs::read(filename);
     let bytes = match result {
         Ok(data) => data,
-        Err(bruh) => panic!("Failed to read file {filename}: {bruh}"),
+        Err(bruh) => return None,
     };
     let deserialized_session_result = LlamaChatSession::from_bytes(&bytes);
 
