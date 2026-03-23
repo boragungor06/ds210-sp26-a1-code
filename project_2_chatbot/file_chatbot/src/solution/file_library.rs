@@ -12,8 +12,9 @@ use std::fs;
 
 // Implement this
 pub fn save_chat_session_to_file(filename: &str, session: &LlamaChatSession) {
+    let session_as_bytes = session.to_bytes().unwrap(); // this comes from saving and loading sessions section of kalosm library document mentioned above
+    fs::write(filename, session_as_bytes).unwrap(); // I just looked write command in the same source and here is how they do it
     // look at fs::write(...)
-    unimplemented!("Saving chat session to file {filename}");
 }
 
 // Implement this
