@@ -39,6 +39,11 @@ impl ChatbotV5 {
     return out;
     }
 
+    pub fn save_chat_session_to_file(filename: &str, session: &LlamaChatSession) {
+        let session_as_bytes = session.to_bytes().unwrap(); 
+        fs::write(filename, session_as_bytes).unwrap(); 
+    }
+
     pub async fn chat_with_user(&mut self, username: String, message: String) -> String {
         let filename = &format!("{}.txt", username);
         let cached_chat = self.cache.get_chat(&username);
@@ -70,6 +75,14 @@ impl ChatbotV5 {
         // now, formulate the response and add it to the session
         let output = active_chat.add_message(message).await;
         let result = output.unwrap();
+
+        // then, write to the file
+        let clone = active_chat.clone();
+        let session_unwrapped = clone.session().unwrap();
+        // dereferencing the var clone_unwrapped (a smart pointer) yields a LlamaChatsession. 
+        let referenced_session = &*session_unwrapped;
+
+        Self::save_chat_session_to_file(filename, referenced_session);
 
         // next, this must become the most recently used cache conversation
         self.cache.insert_chat(username, active_chat);

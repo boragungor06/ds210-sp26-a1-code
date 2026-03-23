@@ -38,6 +38,7 @@ impl<V> Cache<V> {
     fn mark_as_most_recently_used(&mut self, username: String) {
         // TODO: your code goes here.
         // println!("Marking {username} as most recently used");
+        
     }
 
     // Reading from the cache:
