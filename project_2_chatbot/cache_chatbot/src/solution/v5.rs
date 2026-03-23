@@ -99,11 +99,17 @@ impl ChatbotV5 {
             None => {
                 println!("get_history: {username} is not in the cache!");
                 if let Some(session) = file_library::load_chat_session_from_file(filename) { // to see if we have the info in the files
+                    let history = session.history();
+                    let mut output = Vec::new();
+                    for message in history.iter().skip(1) {
+                        output.push(message.content().to_string());
+                    }
                     let chat = self.model
                         .chat()
                         .with_system_prompt("The assistant will act like a pirate")
                         .with_session(session); // getting back the session from the file
                     self.cache.insert_chat(username, chat); // putting in the cache it has been used for the next time
+                    return output;
                 }
                 // TODO: The cache does not have the chat. What should you do?
                 // Your code goes here.
