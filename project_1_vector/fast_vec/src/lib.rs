@@ -61,17 +61,43 @@ impl<T> FastVec<T> {
     // Student 1 and Student 2 should implement this together
     // Use the project handout as a guide for this part!
     pub fn get(&self, i: usize) -> &T {
-        todo!("implement get!");
+        //todo!("implement get!");
+        unsafe {
+        if i >= self.len {
+            panic!("FastVec: get out of bounds"); }
+        else {
+            let ptr = self.ptr_to_data.add(i); 
+            // the ptr stores the first address of the first element. 
+            // if we want the i'th element, we perform pointer arithmetic (.add()) to move i*datasize addresses down.
+            return &*ptr; }
+        }    
     }
+    
 
     // Student 2 should implement this.
     pub fn push(&mut self, t: T) {
         if self.len == self.capacity {
-            todo!("implement growing the vector by doubling the size!");
-        } else {
-            todo!("implement pushing t directly since the vector still has capacity!");
+            //todo!("implement growing the vector by doubling the size!");
+            unsafe {
+                let new_capacity = self.capacity * 2;
+                let new_ptr = MALLOC.malloc(size_of::<T>() * new_capacity) as *mut T;
+
+                for i in 0..self.len {
+                   let val = ptr::read(self.ptr_to_data.add(i));
+                   ptr::write(new_ptr.add(i), val)
+                } 
+                ptr::write(new_ptr.add(self.len), t);
+
+                self.ptr_to_data = new_ptr;
+                self.len = self.len + 1;
+                self.capacity = new_capacity }
+            }
+        else {
+            //todo!("implement pushing t directly since the vector still has capacity!");
+            unsafe {ptr::write(self.ptr_to_data.add(self.len), t)}
+            self.len += 1;
         }
-    }
+}
 
     // Student 1 should implement this.
     pub fn remove(&mut self, i: usize) {
@@ -110,3 +136,4 @@ impl<T: Display> Display for FastVec<T> {
         return write!(f, "]");
     }
 }
+
