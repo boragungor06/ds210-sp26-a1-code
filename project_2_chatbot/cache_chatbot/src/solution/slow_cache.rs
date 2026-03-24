@@ -37,12 +37,18 @@ impl<V> Cache<V> {
             self.hashmap.remove(&least_used);
         }
         // TODO: your code goes here.
-        // println!("Removing least recently used");
+        println!("Removing least recently used");
     }
     fn mark_as_most_recently_used(&mut self, username: String) {
-        // TODO: your code goes here.
-        // println!("Marking {username} as most recently used");
-        
+        //TODO
+        for i in 0..self.usage_history.len() {
+            if &username == &self.usage_history[i] {
+                self.usage_history.remove(i);
+                break;
+            }
+        }
+        println!("Marking {} as most recently used", &username);
+        self.usage_history.push(username);
     }
 
     // Reading from the cache:
