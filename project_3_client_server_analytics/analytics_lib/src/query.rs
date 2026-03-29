@@ -4,7 +4,7 @@ pub enum Condition {
     Equal(String, Value),
     Not(Box<Condition>),
     And(Box<Condition>, Box<Condition>),
-    Or(Box<Condition>, Box<Condition>),
+    Or(Box<Condition>, Box<Condition>), 
 }
 
 pub enum Aggregation {
