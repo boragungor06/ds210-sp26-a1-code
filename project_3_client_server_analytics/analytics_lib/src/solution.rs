@@ -14,7 +14,7 @@ pub fn condition_check(row: &Row, condition: &Condition, dataset: &Dataset) -> b
             // if the value inside the condition and our data in dataset is the same (that is, they are EQUAL), return true
         }
         Condition::Not(cond1) => {
-            // just the opposite of any condition; check for the condition using recursion and return the opposite bool
+            // NOT is just the opposite of EQUAL; check for equality using recursion and return the opposite bool
             return !condition_check(row,cond1,dataset);
         }
         Condition::And(cond1, cond2) => {
@@ -48,11 +48,11 @@ pub fn group_by_dataset(dataset: Dataset, group_by_column: &String) -> HashMap<V
     for row in dataset.iter() { // iterating over all the rows in our dataset
         let data = row.get_value(index); // getting out the desired data in each row
         
-        if groups.contains_key(data){ // if the data is already a group in hashmap
+        if groups.contains_key(data){ // if the data is already a group in HashMap
             groups.get_mut(&data).unwrap().add_row(row.clone());
             // just add the row to it, I use unwrap as get_mut gives an option
         } else {
-            // if it is not in the hashmap
+            // if it is not in the HashMap
             groups.insert(data.clone(), Dataset::new(dataset.columns().clone()));
             // first I create a new dataset to store the rows for that group
             groups.get_mut(&data).unwrap().add_row(row.clone());
@@ -72,7 +72,7 @@ pub fn aggregate_dataset(dataset: HashMap<Value, Dataset>, aggregation: &Aggrega
         // for every group, aggregate it
         let result = match aggregation {
             Aggregation::Count(_col_name) => {
-                // if the aggregation method is count, then use .len() to get the length of the column; that is, the number of elements within it
+                // if the aggregation method is count, then use .len() to get the length of the column
                 Value::Integer(group.len() as i32)
             }
             Aggregation::Sum(col_name) => {
@@ -102,6 +102,7 @@ pub fn aggregate_dataset(dataset: HashMap<Value, Dataset>, aggregation: &Aggrega
             }
         };
         // for each group (given by value), pair with it the aggregated result (given by result)
+        // this, as a key-value pair, is added to our aggregated HashMap
         aggregated.insert(value, result); 
     }
     return aggregated
