@@ -3,13 +3,39 @@ extern crate tarpc;
 use std::time::Instant;
 use std::io::BufRead;
 
-use analytics_lib::query::Query;
+use analytics_lib::query::{Aggregation, Query};
 use client::{start_client, solution};
 
 // Your solution goes here.
 fn parse_query_from_string(input: String) -> Query {
-    todo!("Implement this");
-}
+    let mut words: Vec<&str> = Vec::new();
+    for word in input.split_whitespace() {
+        words.push(word);
+    }
+    
+    let operation_category = words[words.len()-1].to_string();
+    let operation_type = words[words.len()-2];
+    let mut operation = Aggregation::Count(String::from("dummy"));
+    match operation_type {
+        "COUNT" => operation = Aggregation::Count(operation_category),
+        "SUM" => operation = Aggregation::Sum(operation_category),
+        "AVERAGE" => operation = Aggregation::Average(operation_category),
+        _ => panic!("Error"),
+    }
+    let mut location_of_group = 0;
+
+    for i in 0..words.len() {
+        if words[i] == "GROUP" {
+            location_of_group = i;
+            break;
+        }
+        }
+    let word_after_groupby = words[location_of_group + 2].to_string();
+    // this code gets the word after group by => "GROUP by class", this gets the "class"
+
+
+    }
+
 
 // Each defined rpc generates an async fn that serves the RPC
 #[tokio::main]
