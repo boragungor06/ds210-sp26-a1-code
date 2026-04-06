@@ -1,9 +1,10 @@
+use analytics_lib::dataset::Value;
 extern crate tarpc;
 
 use std::time::Instant;
 use std::io::BufRead;
 
-use analytics_lib::query::{Aggregation, Query};
+use analytics_lib::query::{Aggregation, Condition, Query};
 use client::{start_client, solution};
 
 // Your solution goes here.
@@ -13,6 +14,163 @@ fn parse_query_from_string(input: String) -> Query {
         words.push(word);
     }
     
+    // The Query object is comprised of three components: 
+    // (1) the condition, (2) the group-by, and (3) the aggregation method
+
+    // CONDITION:
+
+    // first, notice that the FILTER condition lies strictly between "FILTER" and "GROUP BY" in the query. so, first we extract
+    // this component of the string
+
+    let mut start_idx = 0;
+    let mut end_idx = 0;
+    
+    for i in 0..words.len() {
+        if words[i] == "FILTER" {
+            start_idx = i + 1
+        }
+        else if words[i] == "GROUP" {
+            end_idx = i;
+            break;
+        }
+    }
+
+    // the vec containing only the condition tokens
+    let condition_as_vec = words.clone()[start_idx..end_idx].to_vec();
+    let final_filter: Condition;
+
+    // now, we want to divide this substring into smaller instructions, divided by AND or OR
+    // so that each instruction within each OR/AND clause is seperate
+    // crucially but limiting, I will assume that there can only be ONE and/or; no recursion
+
+    let mut left = Vec::new();
+    let mut right = Vec::new();
+    let mut operator = "";
+
+    for i in  0..condition_as_vec.len() {
+        if condition_as_vec[i] == "AND" {
+            left = condition_as_vec[0..i].to_vec();
+            right = condition_as_vec[i+1..condition_as_vec.len()].to_vec();
+            operator = "AND";
+            break;
+        }
+        else if condition_as_vec[i] == "OR"  {
+            left = condition_as_vec[0..i].to_vec();
+            right = condition_as_vec[i+1..condition_as_vec.len()].to_vec();
+            operator = "OR";
+            break;
+        }; 
+    }
+    // now, we can start parsing the condition. this code is long.
+    // but, it simply repeats the same logic 3 times: for left and for right, or for only the original argument
+
+    // for LEFT and RIGHT
+    if operator == "AND" || operator == "OR" {
+        // LEFT
+        let mut left_first = left[0];
+        let mut left_last = left[left.len() - 1];
+        let mut left_is_not = false;
+    
+        while left_first.starts_with('(') || left_first.starts_with('!') || left_first.starts_with('"') {
+            if left_first.starts_with('!') { 
+                left_is_not = true; 
+            }
+            left_first = &left_first[1..]; // move up one char
+        }
+
+        while left_last.ends_with(')') || left_last.ends_with('"') {
+                left_last = &left_last[..left_last.len()-1];
+        }
+
+        while left_last.starts_with('"') {
+            left_last = &left_last[1..];
+        }
+
+        let mut left_condition = Condition::Equal(
+            left_first.to_string(), 
+            Value::String(left_last.to_string())
+        );
+
+        if left_is_not {
+            left_condition = Condition::Not(Box::new(left_condition));
+        }
+
+        // RIGHT
+        let mut right_first = right[0];
+        let mut right_last = right[right.len() - 1];
+        let mut right_is_not = false;
+    
+        while right_first.starts_with('(') || right_first.starts_with('!') || right_first.starts_with('"') {
+            if right_first.starts_with('!') { 
+                right_is_not = true; 
+            }
+            right_first = &right_first[1..];
+        }
+
+        while right_last.ends_with(')') || right_last.ends_with('"') {
+            if !right_last.is_empty() {
+                right_last = &right_last[..right_last.len() - 1];
+            } else { break; }
+        }
+
+        while right_last.starts_with('"') {
+            if !right_last.is_empty() {
+                right_last = &right_last[1..];
+            } else { break; }
+        }
+
+        let mut right_condition = Condition::Equal(
+            right_first.to_string(), 
+            Value::String(right_last.to_string())
+        );
+
+        if right_is_not {
+            right_condition = Condition::Not(Box::new(right_condition));
+        }
+
+        if operator == "AND" {
+            final_filter = Condition::And(Box::new(left_condition), Box::new(right_condition));
+        } else {
+            final_filter = Condition::Or(Box::new(left_condition), Box::new(right_condition));
+        }
+
+    }
+    else {
+        // FOR THE ORIGINAL ARGUMENT
+        let mut first = condition_as_vec[0];
+        let mut last = condition_as_vec[condition_as_vec.len() - 1];
+        let mut is_not = false;
+    
+        while first.starts_with('(') || first.starts_with('!') || first.starts_with('"') {
+            if first.is_empty() { break; }
+            if first.starts_with('!') { is_not = true; }
+            first = &first[1..];
+        }
+
+        while last.ends_with(')') || last.ends_with('"') {
+            if last.is_empty() { break; }
+            last = &last[..last.len() - 1];
+        }
+
+        while last.starts_with('"') {
+            if last.is_empty() { break; }
+            last = &last[1..];
+        }
+
+       let mut base = Condition::Equal(
+            first.to_string(), 
+            Value::String(last.to_string())
+        );
+
+        if is_not {
+            base = Condition::Not(Box::new(base));
+        }
+
+        final_filter = base;
+    }
+
+    // AGGREGATION:
+
     let operation_category = words[words.len()-1].to_string();
     let operation_type = words[words.len()-2];
     let mut operation = Aggregation::Count(String::from("dummy"));
@@ -24,6 +182,7 @@ fn parse_query_from_string(input: String) -> Query {
     }
     let mut location_of_group = 0;
 
+    // GROUP-BY:
     for i in 0..words.len() {
         if words[i] == "GROUP" {
             location_of_group = i;
@@ -32,8 +191,9 @@ fn parse_query_from_string(input: String) -> Query {
         }
     let word_after_groupby = words[location_of_group + 2].to_string();
     // this code gets the word after group by => "GROUP by class", this gets the "class"
-
-
+    
+    let x = Query::new(final_filter, word_after_groupby, operation);
+    return x
     }
 
 
