@@ -13,8 +13,6 @@ impl Agent for SolutionAgent {
     // where <score> is your estimate for the score of the game
     // and <x>, <y> are the position of the move your solution will make.
     fn solve(board: &mut Board, player: Player, _time_limit: u64) -> (i32, usize, usize) {
-        // If you want to make a recursive call to this solution, use
-        // `SolutionAgent::solve(...)`
         if board.game_over() {
             return (board.score(), 0, 0)
         }
@@ -33,11 +31,26 @@ impl Agent for SolutionAgent {
         };
 
         for possible_move in board.moves() {
-            let next_board = &mut board.clone();
-            next_board.apply_move(possible_move, player);
+            board.apply_move(possible_move, player);
 
-            let (score, _, _) = SolutionAgent::solve(next_board, opponent, _time_limit);
+            let (score, _, _) = SolutionAgent::solve(board, opponent, _time_limit);
+            board.undo_move(possible_move, player); // by using undo_move, we can avoid cloning by directly reversing applied moves
 
-            !unimplemented!()
+            if player == Player::X {
+                if score > best_score {
+                    best_score = score;
+                    best_move = possible_move;
+                }
+            } else {
+                if score < best_score {
+                    best_score = score;
+                    best_move = possible_move;
+                }
+            }
+        }
+        
+        return (best_score, best_move.0, best_move.1)
+
     }
+    
 }
