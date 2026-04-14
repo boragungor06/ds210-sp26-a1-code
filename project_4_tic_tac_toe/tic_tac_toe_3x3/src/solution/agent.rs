@@ -51,6 +51,7 @@ impl Agent for SolutionAgent {
         
         return (best_score, best_move.0, best_move.1)
 
+
     }
     
 }
