@@ -13,7 +13,7 @@ impl Agent for SolutionAgent {
     fn solve(board: &mut Board, player: Player, _time_limit: u64) -> (i32, usize, usize) {
 
         // this helper will keep track of recursion depth
-        fn solve_helper(board: &mut Board, player: Player, _time_limit: u64, depth: u32, max_depth: u32) -> (i32, usize, usize) {
+        fn solve_helper(board: &mut Board, player: Player, _time_limit: u64, depth: u32, max_depth: u32, mut alpha: i32, mut beta: i32) -> (i32, usize, usize) {
         
             if board.game_over() || depth == max_depth {
                 return (SolutionAgent::heuristic(board), 0, 0)
@@ -34,8 +34,8 @@ impl Agent for SolutionAgent {
             for possible_move in board.moves() {
                 board.apply_move(possible_move, player);
 
-                let (score, _, _) = solve_helper(board, opponent, _time_limit, depth + 1, max_depth);
-                board.undo_move(possible_move, player); // by using undo_move, we can avoid cloning by directly reversing applied moves
+                let (score, _, _) = solve_helper(board, opponent, _time_limit, depth + 1, max_depth, alpha, beta);
+                board.undo_move(possible_move, player); // reversing moves during recursive unwinding instead of cloning during winding
 
 
                 if player == Player::X {
@@ -43,12 +43,15 @@ impl Agent for SolutionAgent {
                         best_score = score;
                         best_move = Some(possible_move);
                     }
+                    alpha = alpha.max(best_score);
                 } else {
                     if score < best_score {
                         best_score = score;
                         best_move = Some(possible_move);
                     }
+                    beta = beta.min(best_score);
                 }
+                if alpha >= beta { break; }
             }
             
             let (row, col) = best_move.unwrap_or((0,0));
@@ -56,8 +59,8 @@ impl Agent for SolutionAgent {
         }
         
         // max_depth determines the current max depth. with more code optimization, max_depth could be increased.
-        let max_depth = 4; 
-        return solve_helper(board, player, _time_limit, 0, max_depth)
+        let max_depth = 5; 
+        return solve_helper(board, player, _time_limit, 0, max_depth, -2147483647, 2147483647)
     }
 
 }
