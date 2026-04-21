@@ -77,19 +77,15 @@ impl SolutionAgent {
             for col in 0..len {
                 let cell = &cells[row][col];
 
-                let centrality = 
-                    // dead center; preferrable (3)
-                    if row == 2 && col == 2 {
-                        3
-                    }
-                    // inner ring; less potential (1)
-                    else if row >= 1 && row <= 3 && col >= 1 && col <= 3 {
-                        1
-                    }
-                    // outer ring; least potential (0)
-                    else {
-                        0
-                    };
+                let center: i32 = 2; // center of the board
+                let rowi32: i32 = row as i32; // I change it to i32 so it can go negative
+                let coli32: i32 = col as i32;
+
+                let rowdifference = (rowi32 - center).abs(); // verticle distance
+                let columndifference = (coli32 - center).abs(); // horizontal distance
+                let dist = rowdifference + columndifference; // total distance
+
+                let centrality = 5 - dist;// if it is closer to center it will get a higher value
                 
                 if let tic_tac_toe_stencil::board::Cell::X = cell {
                     score += centrality;
@@ -98,6 +94,60 @@ impl SolutionAgent {
                 }                          
             }
         } 
+        // nearby cell check
+        for r in 0..len { //row
+            for c in 0..len { //column
+                let cell = &cells[r][c];
+
+                // figure out if this cell is X or O
+                let x_cell;
+                let o_cell;
+                if let tic_tac_toe_stencil::board::Cell::X = cell {
+                    x_cell = true;
+                    o_cell = false;
+                } else if let tic_tac_toe_stencil::board::Cell::O = cell {
+                    x_cell = false;
+                    o_cell = true;
+                } else {
+                    continue; // skip empty cells and walls
+                }
+
+                // count friendly neighbors and empty neighbors
+                let mut same_count = 0;
+                let mut open_count = 0;
+
+                // check all 8 neighbors
+                for dr in -1i32..=1 {
+                    for dc in -1i32..=1 {
+                        if dr == 0 && dc == 0 { continue; } // skip self
+                        let adj_r = r as i32 + dr;
+                        let adj_c = c as i32 + dc;
+                        if adj_r < 0 || adj_r >= len as i32 || adj_c < 0 || adj_c >= len as i32 { continue; }
+
+                        let adj = &cells[adj_r as usize][adj_c as usize];
+
+                        if x_cell {
+                            if let tic_tac_toe_stencil::board::Cell::X = adj {
+                                same_count += 1;
+                            }
+                        }
+                        if o_cell {
+                            if let tic_tac_toe_stencil::board::Cell::O = adj {
+                                same_count += 1;
+                            }
+                        }
+                        if let tic_tac_toe_stencil::board::Cell::Empty = adj {
+                            open_count += 1;
+                        }
+                    }
+                }
+
+                let val = same_count * 15 + open_count * 5;
+
+                if x_cell { score += val; }
+                if o_cell { score -= val; }
+            }
+        }
         return score
     }
 }
