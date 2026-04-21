@@ -82,19 +82,15 @@ impl SolutionAgent {
             for col in 0..len {
                 let cell = &cells[row][col];
 
-                let centrality = 
-                    // dead center; preferrable (3)
-                    if row == 2 && col == 2 {
-                        3
-                    }
-                    // inner ring; less potential (1)
-                    else if row >= 1 && row <= 3 && col >= 1 && col <= 3 {
-                        1
-                    }
-                    // outer ring; least potential (0)
-                    else {
-                        0
-                    };
+                let center: i32 = 2; // center of the board
+                let rowi32: i32 = row as i32; // I change it to i32 so it can go negative
+                let coli32: i32 = col as i32;
+
+                let rowdifference = (rowi32 - center).abs(); // verticle distance
+                let columndifference = (coli32 - center).abs(); // horizontal distance
+                let dist = rowdifference + columndifference; // total distance
+
+                let centrality = 5 - dist;// if it is closer to center it will get a higher value
                 
                 if let tic_tac_toe_stencil::board::Cell::X = cell {
                     score += centrality;
