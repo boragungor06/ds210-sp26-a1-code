@@ -38,6 +38,9 @@ impl Agent for SolutionAgent {
                 board.undo_move(possible_move, player); // reversing moves during recursive unwinding instead of cloning during winding
 
 
+                // now implements alpha-beta pruning: we can ignore searching over branches
+                // that would not be considered by a rational player since better moves have
+                // already been found
                 if player == Player::X {
                     if score > best_score {
                         best_score = score;
@@ -70,9 +73,11 @@ impl SolutionAgent {
         // points beat potential points; any 3 in a row is amplified 1000-fold
         let mut score = board.score() * 1000;
         
-        // centrality
+        
         let cells = board.get_cells();
         let len = cells.len();
+        
+        // centrality
         for row in 0..len {
             for col in 0..len {
                 let cell = &cells[row][col];
@@ -95,9 +100,63 @@ impl SolutionAgent {
                     score += centrality;
                 } else if let tic_tac_toe_stencil::board::Cell::O = cell {
                     score -= centrality;
-                }                          
+                }                        
             }
         } 
+
+        // consecutive X/O counting
+         for row in 0..len {
+            for col in 0..len {
+                if col + 2 < len {
+                   score += Self::count_consecutive_cells(&cells[row][col], &cells[row][col+1], &cells[row][col+2]); 
+                }
+
+                if row + 2 < len {
+                    score += Self::count_consecutive_cells(&cells[row][col], &cells[row+1][col], &cells[row+2][col]);
+                }
+
+                if row + 2 < len && col + 2 < len {
+                    score += Self::count_consecutive_cells(&cells[row][col], &cells[row+1][col+1], &cells[row+2][col+2]);
+                }
+
+                if row + 2 < len && col >= 2 {
+                    score += Self::count_consecutive_cells(&cells[row][col], &cells[row+1][col-1], &cells[row+2][col-2]);
+                }
+            }
+        } 
+
         return score
     }
+
+    // takes a trio of consecutive cells, and counts the number of X's, O's, empty cells, and accounts for walls
+    // returns a score based on strategic importance of the cell group. 
+    // invalid trios (if there are walls) will are successfully ignored by the heuristic
+     fn count_consecutive_cells(c1: &tic_tac_toe_stencil::board::Cell, c2: &tic_tac_toe_stencil::board::Cell, c3: &tic_tac_toe_stencil::board::Cell) -> i32 {
+        use tic_tac_toe_stencil::board::Cell;
+
+        let mut x_count = 0;
+        let mut o_count = 0;
+        let mut free_count = 0;
+
+        for cell in [c1, c2, c3] {
+            match cell {
+                Cell::X => x_count += 1,
+                Cell::O => o_count += 1,
+                Cell::Empty => free_count += 1,
+                _ => {} // Walls or anything else are ignored, remember that _ is the catch-all for match statements
+            }
+        }
+        
+        if x_count == 2 && free_count == 1 {
+            50  // X has a major threat (Open 2-in-a-row)
+        } else if o_count == 2 && free_count == 1 {
+            -50 // O has a major threat 
+        } else if x_count == 1 && free_count == 2 {
+            5   // X is building a line (Open 1-in-a-row)
+        } else if o_count == 1 && free_count == 2 {
+            -5  // O is building a line
+        } else {
+            0   
+        }
+    } 
 }
